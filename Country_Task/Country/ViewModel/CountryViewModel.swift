@@ -5,34 +5,41 @@
 //  Created by Mohamed Elkazzaz on 25/02/2025.
 //
 
+import UIKit
 import Foundation
 import CoreLocation
 
-class HomeViewModel {
+class CountryViewModel {
     
     // Outputs
     var onCountriesUpdate: (() -> Void)?
     
     // Internal state
-    private var allCountries: [Country] = [] {
-        didSet { filterCountries() }
+     var allCountries: [Country] = [] {
+        didSet {
+            filterCountries()
+        }
     }
     var pinnedCountries: [Country] = []
     var filteredCountries: [Country] = []
     
     var searchText: String = "" {
-        didSet { filterCountries() }
+        didSet {
+            filterCountries()
+        }
     }
-    
-    private let countryService: CountryServiceProtocol
-    private let locationManager: LocationManager
+    var onShowAlert: ((String) -> Void)?
+     let countryService: CountryServiceProtocol
+     let locationManager: LocationManager
     
     init(countryService: CountryServiceProtocol, locationManager: LocationManager) {
         self.countryService = countryService
         self.locationManager = locationManager
+        
         self.locationManager.onLocationUpdate = { [weak self] coordinate in
             self?.determineCountryFromLocation(coordinate: coordinate)
         }
+        self.locationManager.requestLocation()
     }
     
     func loadCountries() {
@@ -47,7 +54,7 @@ class HomeViewModel {
         }
     }
     
-    private func filterCountries() {
+     func filterCountries() {
         if searchText.isEmpty {
             filteredCountries = allCountries
         } else {
@@ -85,13 +92,18 @@ class HomeViewModel {
         }
     }
     
-    private func pinCountry(_ country: Country) {
+     func pinCountry(_ country: Country) {
         guard !pinnedCountries.contains(where: { $0.name == country.name }) else { return }
         if pinnedCountries.count < 5 {
             pinnedCountries.insert(country, at: 0)
             onCountriesUpdate?()
+        } else {
+            self.onShowAlert?("Can't pin more than 5 countries")
+            print("Can't pin more than 5 countries")
         }
     }
+    
+ 
     
     func removePinnedCountry(at index: Int) {
         pinnedCountries.remove(at: index)

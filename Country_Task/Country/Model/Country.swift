@@ -13,10 +13,16 @@ struct Country: Codable {
     var currencies: [Currency]?
     var latlng: [Double]?
     var alpha2Code: String?
+    var flags: Flags?
 }
 
  struct Currency: Codable {
     var code: String?
     var name: String?
     var symbol: String?
+}
+
+struct Flags: Codable {
+    let svg: String?
+    let png: String?
 }

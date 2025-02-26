@@ -13,10 +13,11 @@ class CountryViewController: UIViewController {
     @IBOutlet weak var filterCountrySearch: UISearchBar!
     @IBOutlet weak var countryView: UIView!
     
-    private let viewModel: HomeViewModel = HomeViewModel(
+    private let viewModel: CountryViewModel = CountryViewModel(
           countryService: CountryService(),
           locationManager: LocationManager()
       )
+    var pinSelected = false
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -27,6 +28,8 @@ class CountryViewController: UIViewController {
         
         countryTableView.delegate = self
         countryTableView.dataSource = self
+        
+        countryTableView.register(UINib(nibName: "CountryCell", bundle: nil), forCellReuseIdentifier: "cell")
         
         filterCountrySearch.delegate = self
         setupBindings()
@@ -39,6 +42,20 @@ class CountryViewController: UIViewController {
                    self?.countryTableView.reloadData()
                }
            }
+        
+        viewModel.onShowAlert = { [weak self] message in
+               DispatchQueue.main.async {
+                   self?.showAlert(title: "Alert", message: message)
+               }
+           }
+       }
+    
+   
+    
+    private func showAlert(title: String, message: String) {
+           let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+           alert.addAction(UIAlertAction(title: "OK", style: .default))
+           present(alert, animated: true)
        }
 
 }
@@ -62,24 +79,27 @@ extension CountryViewController: UITableViewDelegate, UITableViewDataSource {
        }
        
        func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-           let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "Cell")
+           let cell = countryTableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! CountryCell
            let country = (indexPath.section == 0)
                ? viewModel.pinnedCountries[indexPath.row]
                : viewModel.filteredCountries[indexPath.row]
            cell.selectionStyle = .none
-           cell.textLabel?.text = country.name
-           cell.detailTextLabel?.text = country.capital ?? "No capital"
+           cell.countryLabel.text = country.name
+           cell.capitalLabel.text = country.capital ?? "No capital"
+           cell.didSelect = { [weak self] in
+                   self?.viewModel.pinCountry(country)
+           }
            return cell
        }
        
        func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-           // On selection, navigate to detail screen
+           
            let country = (indexPath.section == 0)
                ? viewModel.pinnedCountries[indexPath.row]
                : viewModel.filteredCountries[indexPath.row]
-//           
-//           let detailVC = CountryDetailViewController(country: country)
-//           navigationController?.pushViewController(detailVC, animated: true)
+           
+           let detailVC = CountryDetailViewController(country: country)
+           navigationController?.pushViewController(detailVC, animated: true)
        }
        
        
@@ -93,7 +113,6 @@ extension CountryViewController: UITableViewDelegate, UITableViewDataSource {
                viewModel.removePinnedCountry(at: indexPath.row)
            }
        }
-    
     
 }
 
